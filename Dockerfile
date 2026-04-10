@@ -7,6 +7,7 @@ COPY gradle ./gradle
 COPY src ./src
 
 # Build the application
+RUN chmod +x ./gradlew
 RUN ./gradlew build -x test --no-daemon
 
 # Use a lightweight JRE image for the final container
