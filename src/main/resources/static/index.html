@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Voting System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Online Voting System</h1>
+        <button id="logoutBtn" onclick="logout()" class="hidden bg-blue-800 hover:bg-blue-700 text-white py-1 px-4 rounded transition">Logout</button>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Auth Section -->
+        <section id="authSection" class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg fade-in">
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">Voter Login</h2>
+                <input type="text" id="loginId" placeholder="User ID" class="w-full mb-4 p-3 border rounded focus:outline-none focus:border-blue-500">
+                <input type="password" id="loginPass" placeholder="Password" class="w-full mb-6 p-3 border rounded focus:outline-none focus:border-blue-500">
+                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition mb-4">Login</button>
+                <p class="text-center text-sm">Don't have an account? <a href="#" onclick="toggleAuth('register')" class="text-blue-500 hover:underline">Register here</a></p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <h2 class="text-2xl font-bold mb-6 text-center text-green-600">New Voter Registration</h2>
+                <input type="text" id="regId" placeholder="Student / User ID" class="w-full mb-4 p-3 border rounded focus:outline-none focus:border-green-500">
+                <input type="text" id="regName" placeholder="Full Name" class="w-full mb-4 p-3 border rounded focus:outline-none focus:border-green-500">
+                <input type="password" id="regPass" placeholder="Password" class="w-full mb-6 p-3 border rounded focus:outline-none focus:border-green-500">
+                <button onclick="register()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition mb-4">Register</button>
+                <p class="text-center text-sm">Already registered? <a href="#" onclick="toggleAuth('login')" class="text-blue-500 hover:underline">Login here</a></p>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard -->
+        <section id="adminSection" class="hidden w-full max-w-5xl bg-white p-6 md:p-8 rounded-lg shadow-lg fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                <div class="text-center md:text-right mt-4 md:mt-0">
+                    <p id="electionStatusBadge" class="text-lg font-bold text-red-500">ELECTION PAUSED</p>
+                    <p class="text-gray-500 text-sm">Total Votes: <span id="totalVotes" class="font-bold text-gray-800">0</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Controls -->
+                <div class="bg-gray-100 p-4 rounded shadow-inner">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Controls</h3>
+                    <button id="toggleElectionBtn" onclick="toggleElection()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-6 transition">Start Election</button>
+                    
+                    <h3 class="font-bold text-md mb-2">Add Candidate</h3>
+                    <input type="text" id="candId" placeholder="Candidate ID" class="w-full mb-2 p-2 border rounded">
+                    <input type="text" id="candName" placeholder="Candidate Name" class="w-full mb-2 p-2 border rounded">
+                    <input type="text" id="candParty" placeholder="Party Name" class="w-full mb-4 p-2 border rounded">
+                    <button onclick="addCandidate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">Add Candidate</button>
+                </div>
+
+                <!-- Live Results -->
+                <div class="lg:col-span-2 overflow-x-auto">
+                    <h3 class="font-bold text-lg mb-4">Live Results</h3>
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-200 text-gray-700">
+                            <tr>
+                                <th class="py-2 px-4 border-b text-left">ID</th>
+                                <th class="py-2 px-4 border-b text-left">Name</th>
+                                <th class="py-2 px-4 border-b text-left">Party</th>
+                                <th class="py-2 px-4 border-b text-center">Votes</th>
+                                <th class="py-2 px-4 border-b text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="text-gray-700">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Voter Dashboard -->
+        <section id="voterSection" class="hidden w-full max-w-4xl bg-white p-6 md:p-8 rounded-lg shadow-lg fade-in">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-blue-600 mb-2">Welcome, <span id="voterNameDisplay">Voter</span>!</h2>
+                <p id="voterStatusBadge" class="text-lg font-semibold text-gray-600">Please cast your vote below.</p>
+                <p id="voterElectionStatus" class="text-sm font-bold text-green-500 mt-2">ELECTION IS OPEN</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="voterCandidatesGrid">
+                <!-- Cards populated via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 text-center py-4 text-sm mt-auto">
+        &copy; 2026 Online Voting System. Java Spring Boot + PostgreSQL.
+    </footer>
+
+    <script>
+        let currentUser = null;
+        let isElectionActive = false;
+        let pollInterval = null;
+
+        const API_BASE = '/api';
+
+        // === Authentication ===
+        function toggleAuth(type) {
+            document.getElementById('loginForm').classList.toggle('hidden', type !== 'login');
+            document.getElementById('registerForm').classList.toggle('hidden', type !== 'register');
+        }
+
+        async function login() {
+            const id = document.getElementById('loginId').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            if (!id || !pass) return Swal.fire('Error', 'Please enter ID and Password', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, password: pass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentUser = data;
+                    document.getElementById('loginId').value = '';
+                    document.getElementById('loginPass').value = '';
+                    showDashboard();
+                } else {
+                    Swal.fire('Login Failed', data.message, 'error');
+                }
+            } catch (err) { Swal.fire('Error', 'Server communication failed.', 'error'); }
+        }
+
+        async function register() {
+            const id = document.getElementById('regId').value.trim();
+            const name = document.getElementById('regName').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+            if (!id || !name || !pass) return Swal.fire('Error', 'All fields required', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, name, password: pass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Success', 'Registration successful! You can now login.', 'success');
+                    toggleAuth('login');
+                } else {
+                    Swal.fire('Registration Failed', data.message, 'error');
+                }
+            } catch (err) { Swal.fire('Error', 'Server communication failed.', 'error'); }
+        }
+
+        function logout() {
+            currentUser = null;
+            if (pollInterval) clearInterval(pollInterval);
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('adminSection').classList.add('hidden');
+            document.getElementById('voterSection').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+        }
+
+        // === Dashboard Routing ===
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            if (currentUser.role === 'ADMIN') {
+                document.getElementById('adminSection').classList.remove('hidden');
+                pollData();
+                pollInterval = setInterval(pollData, 3000);
+            } else {
+                document.getElementById('voterSection').classList.remove('hidden');
+                document.getElementById('voterNameDisplay').innerText = currentUser.name;
+                pollData();
+                pollInterval = setInterval(pollData, 3000);
+            }
+        }
+
+        // === Data Polling ===
+        async function pollData() {
+            try {
+                // Fetch Election Status
+                const statusRes = await fetch(`${API_BASE}/election/status`);
+                const statusData = await statusRes.json();
+                isElectionActive = statusData.active;
+                document.getElementById('totalVotes').innerText = statusData.totalVotes;
+
+                // Update Admin UI
+                if (currentUser.role === 'ADMIN') {
+                    const badge = document.getElementById('electionStatusBadge');
+                    const btn = document.getElementById('toggleElectionBtn');
+                    if (isElectionActive) {
+                        badge.innerText = 'ELECTION ACTIVE'; badge.className = 'text-lg font-bold text-green-500';
+                        btn.innerText = 'Stop Election'; btn.className = 'w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-6 transition';
+                    } else {
+                        badge.innerText = 'ELECTION PAUSED'; badge.className = 'text-lg font-bold text-red-500';
+                        btn.innerText = 'Start Election'; btn.className = 'w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-6 transition';
+                    }
+                }
+
+                // Update Voter Status (check if voted)
+                if (currentUser.role === 'VOTER') {
+                    const userRes = await fetch(`${API_BASE}/user/${currentUser.id}`);
+                    const userData = await userRes.json();
+                    
+                    const elBadge = document.getElementById('voterElectionStatus');
+                    elBadge.innerText = isElectionActive ? "ELECTION IS OPEN" : "ELECTION IS PAUSED";
+                    elBadge.className = isElectionActive ? "text-sm font-bold text-green-500 mt-2" : "text-sm font-bold text-red-500 mt-2";
+
+                    if (userData.hasVoted) {
+                        document.getElementById('voterStatusBadge').innerText = "Thank you! You have cast your vote.";
+                        document.getElementById('voterStatusBadge').classList.replace('text-gray-600', 'text-green-600');
+                    }
+                    
+                    // Render candidates
+                    renderVoterCandidates(await fetchCandidates(), userData.hasVoted);
+                }
+
+                // Render Admin Table
+                if (currentUser.role === 'ADMIN') {
+                    renderAdminTable(await fetchCandidates());
+                }
+            } catch (err) { console.error('Polling error', err); }
+        }
+
+        async function fetchCandidates() {
+            const res = await fetch(`${API_BASE}/candidates`);
+            return await res.json();
+        }
+
+        // === Admin Actions ===
+        async function toggleElection() {
+            await fetch(`${API_BASE}/admin/election/toggle`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: currentUser.id, active: !isElectionActive })
+            });
+            pollData();
+        }
+
+        async function addCandidate() {
+            const id = document.getElementById('candId').value.trim();
+            const name = document.getElementById('candName').value.trim();
+            const party = document.getElementById('candParty').value.trim();
+            if (!id || !name || !party) return Swal.fire('Error', 'All fields required', 'error');
+
+            const res = await fetch(`${API_BASE}/admin/candidate`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: currentUser.id, id, name, party })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Success', 'Candidate added!', 'success');
+                document.getElementById('candId').value = '';
+                document.getElementById('candName').value = '';
+                document.getElementById('candParty').value = '';
+                pollData();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        }
+
+        async function deleteCandidate(id) {
+            const res = await fetch(`${API_BASE}/admin/candidate/${id}?adminId=${currentUser.id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Deleted', 'Candidate removed', 'success');
+                pollData();
+            } else {
+                Swal.fire('Cannot Delete', data.message, 'error');
+            }
+        }
+
+        function renderAdminTable(candidates) {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+            
+            let maxVotes = Math.max(...candidates.map(c => c.voteCount), 0);
+
+            candidates.forEach(c => {
+                const isWinner = maxVotes > 0 && c.voteCount === maxVotes;
+                const rowCls = isWinner ? "bg-green-100 font-semibold" : "hover:bg-gray-50";
+                
+                tbody.innerHTML += `
+                    <tr class="border-b ${rowCls}">
+                        <td class="py-2 px-4">${c.id}</td>
+                        <td class="py-2 px-4">${c.name}</td>
+                        <td class="py-2 px-4">${c.party}</td>
+                        <td class="py-2 px-4 text-center">${c.voteCount}</td>
+                        <td class="py-2 px-4 text-center">
+                            <button onclick="deleteCandidate('${c.id}')" class="text-red-500 hover:text-red-700 font-bold" title="Delete">X</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // === Voter Actions ===
+        function renderVoterCandidates(candidates, hasVoted) {
+            const grid = document.getElementById('voterCandidatesGrid');
+            grid.innerHTML = '';
+            
+            if (candidates.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center text-gray-500 py-8">No candidates available at the moment.</p>';
+                return;
+            }
+
+            candidates.forEach(c => {
+                const disabled = hasVoted || !isElectionActive;
+                const btnClass = disabled ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 cursor-pointer";
+                const btnText = disabled ? (hasVoted ? "Vote Cast" : "Election Closed") : "Vote Now";
+
+                grid.innerHTML += `
+                    <div class="bg-white border rounded-lg p-6 shadow hover:shadow-md transition text-center flex flex-col justify-between">
+                        <div>
+                            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                                ${c.name.charAt(0)}
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">${c.name}</h3>
+                            <p class="text-gray-500 mb-6 font-semibold">${c.party}</p>
+                        </div>
+                        <button onclick="castVote('${c.id}', '${c.name}', '${c.party}')" 
+                                ${disabled ? 'disabled' : ''} 
+                                class="w-full ${btnClass} text-white font-bold py-2 rounded transition">
+                            ${btnText}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        async function castVote(candidateId, name, party) {
+            Swal.fire({
+                title: 'Confirm Vote',
+                html: `Are you sure you want to vote for <b>${name}</b> (${party})?<br>This action cannot be undone.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Cast Vote'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await fetch(`${API_BASE}/vote`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ voterId: currentUser.id, candidateId })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire('Voted!', 'Your vote has been securely recorded. 🎉', 'success');
+                        pollData(); // Instantly update UI
+                    } else {
+                        Swal.fire('Voting Failed', data.message, 'error');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

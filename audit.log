@@ -1,0 +1,13 @@
+[2026-04-11 00:27:42] SYSTEM: Initialized default admin account in Cloud DB.
+[2026-04-11 00:42:38] REGISTRATION: New voter registered with ID Student1
+[2026-04-11 00:42:53] LOGIN: User Student1 logged in successfully.
+[2026-04-11 00:43:59] LOGIN: User Student1 logged in successfully.
+[2026-04-11 00:44:23] LOGIN: User Student1 logged in successfully.
+[2026-04-11 00:52:36] LOGIN FAILED: Attempted login for user Student1
+[2026-04-11 00:52:46] LOGIN: User Student1 logged in successfully.
+[2026-04-11 00:53:31] VOTE CAST: User Student1 cast a vote for 2
+[2026-04-11 00:53:47] VOTE BLOCKED: User Student1 attempted to vote again.
+[2026-04-11 00:53:59] VOTE BLOCKED: User Student1 attempted to vote again.
+[2026-04-11 00:54:35] REGISTRATION: New voter registered with ID Student2
+[2026-04-11 00:54:46] LOGIN: User Student2 logged in successfully.
+[2026-04-11 00:55:05] VOTE CAST: User Student2 cast a vote for 2
