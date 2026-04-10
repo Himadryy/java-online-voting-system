@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control Center - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+
+    <!-- Admin Login -->
+    <div id="authContainer" class="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 fade-in border-t-4 border-indigo-500">
+            <div class="text-center mb-8">
+                <i class="fas fa-shield-alt text-4xl text-indigo-500 mb-3"></i>
+                <h1 class="text-2xl font-bold text-gray-900">Control Center</h1>
+                <p class="text-sm text-gray-500 mt-1">Authorized Personnel Only</p>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Administrator ID</label>
+                    <input type="text" id="adminId" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="e.g. admin">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Secret Key</label>
+                    <input type="password" id="adminPass" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                </div>
+                <button onclick="loginAdmin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transform transition hover:scale-[1.02] active:scale-[0.98] mt-4">
+                    Authenticate
+                </button>
+                <div class="text-center mt-4">
+                    <a href="/index.html" class="text-sm text-indigo-500 hover:text-indigo-700 font-semibold transition"><i class="fas fa-arrow-left mr-1"></i> Return to Voter Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden flex h-screen overflow-hidden bg-gray-50 fade-in">
+        
+        <!-- Sidebar (Desktop) -->
+        <aside class="w-64 bg-slate-900 text-white flex-col hidden md:flex">
+            <div class="p-6 border-b border-slate-800">
+                <h2 class="text-xl font-bold flex items-center"><i class="fas fa-vote-yea mr-3 text-indigo-400"></i> Admin Panel</h2>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" class="flex items-center px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-sm font-medium"><i class="fas fa-chart-pie w-6"></i> Live Results</a>
+            </nav>
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center mb-4 px-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center mr-3"><i class="fas fa-user-shield text-sm"></i></div>
+                    <div>
+                        <p class="text-sm font-bold" id="adminNameDisplay">Admin</p>
+                        <p class="text-xs text-slate-400">System Operator</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition text-red-400"><i class="fas fa-power-off mr-2"></i> Terminate Session</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md z-20">
+                <h2 class="font-bold text-lg"><i class="fas fa-shield-alt mr-2 text-indigo-400"></i> Admin</h2>
+                <button onclick="logout()" class="text-red-400 font-bold"><i class="fas fa-power-off"></i></button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8">
+                
+                <!-- Top Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Election Status Card -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Global Network Status</p>
+                                <h3 id="electionStatusText" class="text-3xl font-black text-red-600">PAUSED</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 text-xl" id="statusIconBox">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                        </div>
+                        <button id="toggleBtn" onclick="toggleElection()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-sm transition">
+                            <i class="fas fa-play mr-2"></i> Start Election
+                        </button>
+                    </div>
+
+                    <!-- Total Votes Card -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Votes Cast</p>
+                                <h3 id="totalVotes" class="text-4xl font-black text-gray-900">0</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 text-xl">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="mt-auto">
+                            <p class="text-sm text-gray-500 font-medium"><i class="fas fa-sync-alt animate-spin-slow mr-1 text-indigo-400"></i> Syncing live from Cloud DB...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Candidates Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center"><i class="fas fa-chart-bar text-indigo-500 mr-2"></i> Live Leaderboard</h3>
+                        <button onclick="openCandidateModal()" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-xl transition flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i> Add Candidate
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+                                    <th class="py-4 px-6 font-bold">Rank</th>
+                                    <th class="py-4 px-6 font-bold">Candidate Details</th>
+                                    <th class="py-4 px-6 font-bold text-right">Vote Count</th>
+                                    <th class="py-4 px-6 font-bold text-center">Manage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableBody" class="divide-y divide-gray-100">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = null;
+        let isElectionActive = false;
+        let pollInterval = null;
+
+        async function loginAdmin() {
+            const id = document.getElementById('adminId').value.trim();
+            const pass = document.getElementById('adminPass').value.trim();
+            if (!id || !pass) return Swal.fire({icon: 'error', text: 'Credentials required', confirmButtonColor: '#4f46e5'});
+
+            try {
+                const res = await fetch(`${API_BASE}/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, password: pass })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (data.role !== 'ADMIN') {
+                        Swal.fire({icon: 'error', title: 'Security Alert', text: 'This portal is restricted to Administrators only.', confirmButtonColor: '#ef4444'});
+                        return;
+                    }
+                    currentUser = data;
+                    document.getElementById('authContainer').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    document.getElementById('adminNameDisplay').innerText = currentUser.name;
+                    pollData();
+                    pollInterval = setInterval(pollData, 3000);
+                } else {
+                    Swal.fire({icon: 'error', title: 'Authentication Failed', text: 'Invalid ID or Secret Key.', confirmButtonColor: '#4f46e5'});
+                }
+            } catch (err) { Swal.fire('Error', 'Server communication failed.', 'error'); }
+        }
+
+        function logout() {
+            currentUser = null;
+            clearInterval(pollInterval);
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPass').value = '';
+        }
+
+        async function pollData() {
+            if(!currentUser) return;
+            try {
+                const [statusRes, candRes] = await Promise.all([
+                    fetch(`${API_BASE}/election/status`),
+                    fetch(`${API_BASE}/candidates`)
+                ]);
+                const statusData = await statusRes.json();
+                const candidates = await candRes.json();
+                
+                isElectionActive = statusData.active;
+                
+                // Animate total votes if it changes
+                const totalEl = document.getElementById('totalVotes');
+                if (totalEl.innerText !== statusData.totalVotes.toString()) {
+                    totalEl.classList.add('text-indigo-600');
+                    setTimeout(() => totalEl.classList.remove('text-indigo-600'), 500);
+                }
+                totalEl.innerText = statusData.totalVotes;
+                
+                const statusText = document.getElementById('electionStatusText');
+                const toggleBtn = document.getElementById('toggleBtn');
+                const statusIconBox = document.getElementById('statusIconBox');
+                
+                if (isElectionActive) {
+                    statusText.innerText = 'ACTIVE';
+                    statusText.className = 'text-3xl font-black text-green-500';
+                    statusIconBox.innerHTML = '<i class="fas fa-broadcast-tower text-green-500 animate-pulse"></i>';
+                    statusIconBox.className = 'w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-xl';
+                    
+                    toggleBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause Election';
+                    toggleBtn.className = 'w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-sm transition';
+                } else {
+                    statusText.innerText = 'PAUSED';
+                    statusText.className = 'text-3xl font-black text-red-500';
+                    statusIconBox.innerHTML = '<i class="fas fa-ban text-red-500"></i>';
+                    statusIconBox.className = 'w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-xl';
+                    
+                    toggleBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Election';
+                    toggleBtn.className = 'w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-sm transition';
+                }
+
+                renderTable(candidates);
+            } catch(e) { console.error('Polling error', e); }
+        }
+
+        function renderTable(candidates) {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+            
+            let maxVotes = Math.max(...candidates.map(c => c.voteCount), 0);
+
+            candidates.forEach((c, index) => {
+                const isWinner = maxVotes > 0 && c.voteCount === maxVotes;
+                const badge = isWinner ? `<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-[10px] font-bold ml-2 uppercase tracking-wide border border-yellow-200"><i class="fas fa-crown mr-1"></i> Leading</span>` : '';
+                const rowClass = isWinner ? "bg-green-50/30" : "";
+                const rankColor = index === 0 ? "text-yellow-500" : (index === 1 ? "text-gray-400" : (index === 2 ? "text-amber-600" : "text-gray-400"));
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/80 transition ${rowClass}">
+                        <td class="py-5 px-6">
+                            <span class="font-black text-lg ${rankColor}">#${index + 1}</span>
+                        </td>
+                        <td class="py-5 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 text-indigo-700 flex items-center justify-center font-bold mr-4 text-sm shadow-inner">
+                                    ${c.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-900 text-base">${c.name} ${badge}</p>
+                                    <div class="flex items-center mt-0.5">
+                                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-2">${c.party}</span>
+                                        <span class="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-mono">${c.id}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <span class="font-black text-2xl text-indigo-600">${c.voteCount}</span>
+                        </td>
+                        <td class="py-5 px-6 text-center">
+                            <button onclick="deleteCandidate('${c.id}')" class="text-gray-400 hover:text-red-500 p-2.5 rounded-full hover:bg-red-50 transition" title="Delete Candidate">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function toggleElection() {
+            await fetch(`${API_BASE}/admin/election/toggle`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: currentUser.id, active: !isElectionActive })
+            });
+            pollData();
+        }
+
+        async function openCandidateModal() {
+            const { value: formValues } = await Swal.fire({
+                title: 'Register Candidate',
+                html:
+                    '<input id="swal-id" class="swal2-input" placeholder="Candidate ID (e.g. C01)">' +
+                    '<input id="swal-name" class="swal2-input" placeholder="Full Name">' +
+                    '<input id="swal-party" class="swal2-input" placeholder="Political Party">',
+                focusConfirm: false,
+                confirmButtonColor: '#4f46e5',
+                confirmButtonText: 'Add to Ballot',
+                customClass: { popup: 'rounded-2xl' },
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-id').value.trim(),
+                        document.getElementById('swal-name').value.trim(),
+                        document.getElementById('swal-party').value.trim()
+                    ]
+                }
+            });
+
+            if (formValues) {
+                const [id, name, party] = formValues;
+                if(!id || !name || !party) return Swal.fire({icon: 'error', text: 'All fields required', confirmButtonColor: '#4f46e5'});
+                
+                const res = await fetch(`${API_BASE}/admin/candidate`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminId: currentUser.id, id, name, party })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire({icon: 'success', title: 'Candidate Registered', showConfirmButton: false, timer: 1500, customClass: { popup: 'rounded-2xl' }});
+                    pollData();
+                } else {
+                    Swal.fire({icon: 'error', text: data.message, confirmButtonColor: '#4f46e5'});
+                }
+            }
+        }
+
+        async function deleteCandidate(id) {
+            Swal.fire({
+                title: 'Delete Candidate?',
+                text: "You can only delete candidates who have not received any votes.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete',
+                customClass: { popup: 'rounded-2xl' }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await fetch(`${API_BASE}/admin/candidate/${id}?adminId=${currentUser.id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) {
+                        pollData();
+                    } else {
+                        Swal.fire({icon: 'error', title: 'Cannot Delete', text: data.message, confirmButtonColor: '#4f46e5'});
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
